@@ -22,24 +22,37 @@ final class SignatureValidatorTest extends TestCase
     private string $rsaPublicKey;
     private string $rsaPrivateKey;
 
-    protected function setUp(): void
-    {
-        $this->hmacValidator = new HmacSha256Validator();
-        $this->rsaValidator = new RsaPssValidator();
+    private static string $rsaPublicKeyStatic;
+    private static string $rsaPrivateKeyStatic;
 
-        // Generate a temporary RSA keypair for testing
+    protected static function setUpBeforeClass(): void
+    {
         $privateKeyResource = openssl_pkey_new([
             'private_key_bits' => 2048,
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
         ]);
 
         if ($privateKeyResource === false) {
-            $this->fail('Failed to generate RSA keypair for test.');
+            throw new \RuntimeException('Failed to generate RSA keypair for test.');
         }
 
-        openssl_pkey_export($privateKeyResource, $this->rsaPrivateKey);
+        openssl_pkey_export($privateKeyResource, self::$rsaPrivateKeyStatic);
         $details = openssl_pkey_get_details($privateKeyResource);
-        $this->rsaPublicKey = $details['key'];
+
+        if ($details === false) {
+            throw new \RuntimeException('Failed to get RSA key details.');
+        }
+
+        self::$rsaPublicKeyStatic = $details['key'];
+    }
+
+    protected function setUp(): void
+    {
+        $this->hmacValidator = new HmacSha256Validator();
+        $this->rsaValidator = new RsaPssValidator();
+
+        $this->rsaPrivateKey = self::$rsaPrivateKeyStatic;
+        $this->rsaPublicKey = self::$rsaPublicKeyStatic;
     }
 
     /**
@@ -207,18 +220,18 @@ final class SignatureValidatorTest extends TestCase
     /**
      * @return array<string, array{0: string, 1: string, 2: string}>
      */
-    public function provideValidRsaCases(): array
+    public static function provideValidRsaCases(): array
     {
         $payload = '{"event":"payment.completed","amount":2500}';
 
-        openssl_sign($payload, $binarySignature, $this->rsaPrivateKey, OPENSSL_ALGO_SHA256);
+        openssl_sign($payload, $binarySignature, self::$rsaPrivateKeyStatic, OPENSSL_ALGO_SHA256);
         $signature = base64_encode($binarySignature);
 
         return [
             'valid rsa signature' => [
                 $payload,
                 $signature,
-                $this->rsaPublicKey,
+                self::$rsaPublicKeyStatic,
             ],
         ];
     }

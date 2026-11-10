@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="572" viewBox="0 0 900 572" role="img" aria-label="Hook Shield — demo">
+  <style>
+    text{font-family:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;font-size:15px}
+    .l{opacity:0}
+    .ty{clip-path:inset(0 100% 0 0)}
+    .cur{animation:blink 1s steps(1) infinite}
+    @keyframes show{to{opacity:1}}
+    @keyframes type{to{clip-path:inset(0 0 0 0)}}
+    @keyframes blink{50%{opacity:0}}
+    @media (prefers-reduced-motion:reduce){.l{opacity:1;animation:none!important}.ty{clip-path:none;animation:none!important}}
+  </style>
+  <rect width="900" height="572" rx="14" fill="#0d1117"/>
+  <rect x=".5" y=".5" width="899" height="572" rx="14" fill="none" stroke="#30363d"/>
+  <rect width="900" height="40" rx="14" fill="#161b22"/><rect y="26" width="900" height="14" fill="#161b22"/>
+  <circle cx="24" cy="20" r="6" fill="#ff5f57"/><circle cx="44" cy="20" r="6" fill="#febc2e"/><circle cx="64" cy="20" r="6" fill="#28c840"/>
+  <text x="450" y="25" text-anchor="middle" fill="#8b949e" style="font-size:13px">Hook Shield — demo</text>
+<text x="28" y="74" class="l" style="animation:show .01s 0.60s forwards"><tspan fill="#22d3ee">❯</tspan></text><text x="50" y="74" class="l ty" style="animation:show .01s 0.60s forwards,type 1.80s steps(40) 0.60s forwards" fill="#e5e7eb">composer require hook-shield/hook-shield</text>
+<text x="50" y="100" class="l" style="animation:show .01s 2.70s forwards" fill="#94a3b8">Using version ^1.0</text>
+<text x="50" y="126" class="l" style="animation:show .01s 2.92s forwards" fill="#94a3b8">Generating autoload files</text>
+<text x="50" y="152" class="l" style="animation:show .01s 3.14s forwards" fill="#94a3b8">Package hook-shield/hook-shield installed</text>
+<text x="28" y="204" class="l" style="animation:show .01s 3.71s forwards"><tspan fill="#22d3ee">❯</tspan></text><text x="50" y="204" class="l ty" style="animation:show .01s 3.71s forwards,type 2.20s steps(54) 3.71s forwards" fill="#e5e7eb">cp vendor/hook-shield/config/hookshield.php config.php</text>
+<text x="50" y="230" class="l" style="animation:show .01s 6.21s forwards" fill="#94a3b8">Config copied.</text>
+<text x="50" y="256" class="l" style="animation:show .01s 6.43s forwards" fill="#94a3b8">Edit config.php with your signing secret and cache driver.</text>
+<text x="28" y="308" class="l" style="animation:show .01s 7.00s forwards"><tspan fill="#22d3ee">❯</tspan></text><text x="50" y="308" class="l ty" style="animation:show .01s 7.00s forwards,type 2.20s steps(70) 7.00s forwards" fill="#e5e7eb">php bin/hookshield test --event=upi.payment.success --secret=whsec_123</text>
+<text x="50" y="334" class="l" style="animation:show .01s 9.50s forwards" fill="#4ade80">✓ Signature valid</text>
+<text x="50" y="360" class="l" style="animation:show .01s 9.72s forwards" fill="#4ade80">✓ Replay check passed</text>
+<text x="50" y="386" class="l" style="animation:show .01s 9.94s forwards" fill="#4ade80">✓ Rate limit OK</text>
+<text x="50" y="412" class="l" style="animation:show .01s 10.16s forwards" fill="#94a3b8">Event upi.payment.success routed to handler</text>
+<text x="28" y="464" class="l" style="animation:show .01s 10.73s forwards"><tspan fill="#22d3ee">❯</tspan></text><text x="50" y="464" class="l ty" style="animation:show .01s 10.73s forwards,type 1.67s steps(37) 10.73s forwards" fill="#e5e7eb">php -f examples/plain-php/receive.php</text>
+<text x="50" y="490" class="l" style="animation:show .01s 12.70s forwards" fill="#94a3b8">2025-01-15 10:23:11 [INFO] Webhook accepted</text>
+<text x="50" y="516" class="l" style="animation:show .01s 12.92s forwards" fill="#94a3b8">Order #47821 marked as paid</text>
+<g class="l" style="animation:show .01s 13.14s forwards"><text x="28" y="542" fill="#22d3ee">❯</text><rect class="cur" x="50" y="527" width="10" height="18" fill="#e5e7eb"/></g>
+</svg>

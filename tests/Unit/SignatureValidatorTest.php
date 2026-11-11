@@ -6,6 +6,8 @@ namespace HookShield\Tests\Unit;
 
 use HookShield\Validator\HmacSha256Validator;
 use HookShield\Validator\RsaPssValidator;
+use HookShield\Validator\StripeValidator;
+use HookShield\Validator\RazorpayValidator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,6 +21,8 @@ final class SignatureValidatorTest extends TestCase
 {
     private HmacSha256Validator $hmacValidator;
     private RsaPssValidator $rsaValidator;
+    private StripeValidator $stripeValidator;
+    private RazorpayValidator $razorpayValidator;
     private string $rsaPublicKey;
     private string $rsaPrivateKey;
 
@@ -50,6 +54,8 @@ final class SignatureValidatorTest extends TestCase
     {
         $this->hmacValidator = new HmacSha256Validator();
         $this->rsaValidator = new RsaPssValidator();
+        $this->stripeValidator = new StripeValidator();
+        $this->razorpayValidator = new RazorpayValidator();
 
         $this->rsaPrivateKey = self::$rsaPrivateKeyStatic;
         $this->rsaPublicKey = self::$rsaPublicKeyStatic;
@@ -177,6 +183,96 @@ final class SignatureValidatorTest extends TestCase
     }
 
     /**
+     * @dataProvider provideValidStripeCases
+     */
+    public function testStripeValidatorAcceptsValidSignatures(string $payload, string $signature, string $secret): void
+    {
+        $this->assertTrue(
+            $this->stripeValidator->validate($payload, $signature, $secret),
+            'Valid Stripe signature should be accepted'
+        );
+    }
+
+    /**
+     * @dataProvider provideInvalidStripeCases
+     */
+    public function testStripeValidatorRejectsInvalidSignatures(string $payload, string $signature, string $secret): void
+    {
+        $this->assertFalse(
+            $this->stripeValidator->validate($payload, $signature, $secret),
+            'Invalid Stripe signature should be rejected'
+        );
+    }
+
+    public function testStripeValidatorThrowsOnEmptyPayload(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Payload cannot be empty.');
+
+        $this->stripeValidator->validate('', 't=1234567890,v1=abc123', 'whsec_test');
+    }
+
+    public function testStripeValidatorThrowsOnEmptySecret(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Secret cannot be empty.');
+
+        $this->stripeValidator->validate('{"event":"test"}', 't=1234567890,v1=abc123', '');
+    }
+
+    public function testStripeValidatorReturnsFalseForEmptySignature(): void
+    {
+        $this->assertFalse(
+            $this->stripeValidator->validate('{"event":"test"}', '', 'whsec_test')
+        );
+    }
+
+    public function testStripeValidatorReturnsFalseForMalformedHeader(): void
+    {
+        $this->assertFalse(
+            $this->stripeValidator->validate('{"event":"test"}', 't=1234567890', 'whsec_test')
+        );
+    }
+
+    public function testRazorpayValidatorAcceptsValidSignatures(): void
+    {
+        $payload = '{"event":"order.paid","id":"order_123"}';
+        $secret = 'key_live_razorpay_webhook_secret_123';
+        $signature = hash_hmac('sha256', $payload, $secret);
+
+        $this->assertTrue(
+            $this->razorpayValidator->validate($payload, $signature, $secret)
+        );
+    }
+
+    public function testRazorpayValidatorRejectsInvalidSignatures(): void
+    {
+        $this->assertFalse(
+            $this->razorpayValidator->validate(
+                '{"event":"order.paid"}',
+                'wrong_signature_value',
+                'key_live_razorpay_webhook_secret_123'
+            )
+        );
+    }
+
+    public function testRazorpayValidatorThrowsOnEmptyPayload(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Payload cannot be empty.');
+
+        $this->razorpayValidator->validate('', 'any-sig', 'secret');
+    }
+
+    public function testRazorpayValidatorThrowsOnEmptySecret(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Secret cannot be empty.');
+
+        $this->razorpayValidator->validate('payload', 'sig', '');
+    }
+
+    /**
      * @return array<string, array{0: string, 1: string, 2: string}>
      */
     public static function provideValidHmacCases(): array
@@ -232,6 +328,42 @@ final class SignatureValidatorTest extends TestCase
                 $signature,
                 self::$rsaPublicKeyStatic,
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function provideValidStripeCases(): array
+    {
+        $payload = '{"id":"evt_123","type":"payment_intent.succeeded"}';
+        $ts = 1678900000;
+        $toSign = $ts . '.' . $payload;
+        $secret = 'whsec_testsecret123';
+        $sig = hash_hmac('sha256', $toSign, $secret);
+        $header = "t={$ts},v1={$sig}";
+
+        return [
+            'valid stripe signature' => [$payload, $header, $secret],
+        ];
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function provideInvalidStripeCases(): array
+    {
+        $payload = '{"id":"evt_123","type":"payment_intent.succeeded"}';
+        $ts = 1678900000;
+        $secret = 'whsec_testsecret123';
+        $toSign = $ts . '.' . $payload;
+        $validSig = hash_hmac('sha256', $toSign, $secret);
+
+        return [
+            'wrong v1 component' => [$payload, "t={$ts},v1=wronghash123456", $secret],
+            'tampered payload' => ['{"id":"tampered"}', "t={$ts},v1={$validSig}", $secret],
+            'missing v1' => [$payload, "t={$ts}", $secret],
+            'empty signature' => [$payload, '', $secret],
         ];
     }
 }

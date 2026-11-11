@@ -203,4 +203,53 @@ final class EndToEndTest extends TestCase
         $this->assertFalse($result->isSuccessful());
         $this->assertStringContainsString('Payload size', $result->violations[0] ?? '');
     }
+
+    public function testStripePresetSignatureIsAccepted(): void
+    {
+        $cache = new ArrayAdapter();
+        $secret = 'whsec_test_1234567890abcdef';
+        $payloadArr = [
+            'event' => 'checkout.session.completed',
+            'id' => 'cs_test_123',
+            'amount_total' => 2500,
+        ];
+        $json = json_encode($payloadArr, JSON_THROW_ON_ERROR);
+
+        $timestamp = time();
+        $signedPayload = $timestamp . '.' . $json;
+        $signature = hash_hmac('sha256', $signedPayload, $secret);
+        $stripeSigHeader = "t={$timestamp},v1={$signature}";
+
+        $nonce = bin2hex(random_bytes(16));
+
+        $request = new ServerRequest(
+            'POST',
+            '/stripe/webhook',
+            [
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => $stripeSigHeader,
+                'X-Nonce' => $nonce,
+            ],
+            $json,
+            '1.1',
+            ['REMOTE_ADDR' => '3.1.2.3']
+        );
+
+        $config = [
+            'secret' => $secret,
+            'validator' => 'stripe',
+            'signature' => ['header' => 'stripe-signature'],
+            'cache' => $cache,
+            'tolerance' => 300,
+            'rate_limit' => ['max' => 10, 'window' => 60],
+            'rules' => [],
+        ];
+
+        $result = Shield::protect($request, $config);
+
+        $this->assertTrue($result->isSuccessful());
+        $this->assertSame('checkout.session.completed', $result->event);
+        $this->assertSame($payloadArr, $result->payload);
+        $this->assertSame([], $result->violations);
+    }
 }

@@ -17,6 +17,8 @@ use HookShield\Threat\ThreatDetector;
 use HookShield\Validator\HmacSha256Validator;
 use HookShield\Validator\RsaPssValidator;
 use HookShield\Validator\SignatureValidator;
+use HookShield\Validator\StripeValidator;
+use HookShield\Validator\RazorpayValidator;
 
 /**
  * Value object representing the outcome of webhook protection.
@@ -219,11 +221,20 @@ final class Shield
 
     private static function extractTimestamp(array $headers): int
     {
-        foreach (['x-timestamp', 't', 'x-webhook-timestamp'] as $name) {
-            if (isset($headers[$name][0])) {
-                return (int) $headers[$name][0];
+        foreach ($headers as $key => $values) {
+            $lowerKey = strtolower($key);
+            if (in_array($lowerKey, ['x-timestamp', 't', 'x-webhook-timestamp'], true) && isset($values[0])) {
+                return (int) $values[0];
+            }
+
+            if ($lowerKey === 'stripe-signature' && isset($values[0])) {
+                $sig = (string) $values[0];
+                if (preg_match('/t=(\d+)/', $sig, $matches)) {
+                    return (int) $matches[1];
+                }
             }
         }
+
         return time();
     }
 
@@ -255,6 +266,8 @@ final class Shield
         return match (strtolower($type)) {
             'hmac-sha256', 'hmac' => new HmacSha256Validator(),
             'rsa-pss', 'rsa' => new RsaPssValidator(),
+            'stripe' => new StripeValidator(),
+            'razorpay' => new RazorpayValidator(),
             default => throw new \InvalidArgumentException(sprintf('Unknown validator type "%s".', $type)),
         };
     }

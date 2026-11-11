@@ -38,7 +38,7 @@ Payment gateways and SaaS platforms rely on webhooks for critical state changes,
 <tr>
 <td>
 🔐 <b>Signature Validation</b><br>
-Constant-time HMAC-SHA256, RSA-PSS verification with pluggable validators
+Constant-time HMAC-SHA256, RSA-PSS verification with pluggable validators and built-in presets for Stripe and Razorpay
 </td>
 <td>
 🛡️ <b>Replay Protection</b><br>
@@ -198,6 +198,33 @@ $middleware = new ShieldMiddleware([
 $response = $middleware->process($request, $handler);
 ```
 
+### Stripe and Razorpay preset signature schemes
+
+Hook Shield now ships dedicated validators that understand the exact header formats and signing conventions used by these popular payment platforms.
+
+```php
+// Stripe (parses t= and v1= from stripe-signature header)
+$config = [
+    'secret' => 'whsec_your_stripe_webhook_secret',
+    'validator' => 'stripe',
+    'signature' => [
+        'header' => 'stripe-signature',
+    ],
+    'cache' => $cache,
+    'tolerance' => 300,
+];
+
+// Razorpay (standard HMAC-SHA256 with its header)
+$config = [
+    'secret' => 'your_razorpay_webhook_secret',
+    'validator' => 'razorpay',
+    'signature' => [
+        'header' => 'x-razorpay-signature',
+    ],
+    'cache' => $cache,
+];
+```
+
 <details><summary>Advanced: Custom threat rule + CLI test command</summary>
 
 ```php
@@ -226,7 +253,7 @@ php bin/hookshield test \
 | Option | Default | Description |
 |--------|---------|-------------|
 | `secret` | `''` | HMAC secret (or public key for RSA); required |
-| `validator` | `'hmac-sha256'` | Signature scheme (`hmac-sha256`, `rsa-pss`) |
+| `validator` | `'hmac-sha256'` | Signature scheme (`hmac-sha256`, `rsa-pss`, `stripe`, `razorpay`) |
 | `tolerance` | `300` | Replay timestamp window in seconds (≥30) |
 | `rate_limit` | `['max' => 100, 'window' => 60]` | Sliding window limit per origin |
 | `cache` | `ArrayAdapter()` | Any PSR-6 `CacheItemPoolInterface` |
@@ -244,7 +271,7 @@ All values are validated by `HookShield\Config\Configuration::validate()`.
 flowchart TD
     Request[PSR-7 ServerRequest] --> Shield[Shield::protect]
     Shield --> Config[Configuration::validate]
-    Config --> Validator[SignatureValidator<br/>(HmacSha256Validator / RsaPssValidator)]
+    Config --> Validator[SignatureValidator<br/>(HmacSha256Validator / RsaPssValidator / StripeValidator / RazorpayValidator)]
     Shield --> Replay[ReplayProtector<br/>(nonce + timestamp via Cache)]
     Shield --> Limiter[RateLimiter<br/>(sliding window via Cache)]
     Shield --> Detector[ThreatDetector<br/>(payloadSizeRule, ipBlocklistRule, ...)]
@@ -268,7 +295,7 @@ src/
 ├── Config/
 │   └── Configuration.php          # load() + validate() with strict defaults
 ├── Validator/
-│   └── SignatureValidator.php     # interface + HmacSha256Validator, RsaPssValidator
+│   └── SignatureValidator.php     # interface + HmacSha256Validator, RsaPssValidator, StripeValidator, RazorpayValidator
 ├── Protector/
 │   └── ReplayProtector.php        # nonce + timestamp replay checks
 ├── RateLimiter.php                # sliding-window rate limiting
@@ -304,7 +331,7 @@ The suite covers:
 
 <!-- roadmap:start -->
 - [x] **v0.1.0** — first release: Signature Validation, Replay Protection, Rate Limiting, Event Router
-- [ ] Add Stripe and Razorpay preset signature schemes
+- [x] Add Stripe and Razorpay preset signature schemes
 - [ ] Redis + APCu cache adapters for high-throughput nonce storage
 - [ ] Symfony bundle and auto-registration of middleware
 - [ ] WordPress plugin with admin UI for secret management

@@ -91,14 +91,14 @@ final class Configuration
         }
 
         if (!is_string($config['validator'])) {
-            throw new \InvalidArgumentException('The "validator" must be a string (hmac-sha256 or rsa-pss).');
+            throw new \InvalidArgumentException('The "validator" must be a string (hmac-sha256, rsa-pss, stripe or razorpay).');
         }
 
-        $validValidators = ['hmac-sha256', 'hmac', 'rsa-pss', 'rsa'];
+        $validValidators = ['hmac-sha256', 'hmac', 'rsa-pss', 'rsa', 'stripe', 'razorpay'];
         if (!in_array(strtolower($config['validator']), $validValidators, true)) {
             throw new \InvalidArgumentException(
                 sprintf(
-                    'Unknown validator "%s". Allowed values: hmac-sha256, rsa-pss.',
+                    'Unknown validator "%s". Allowed values: hmac-sha256, hmac, rsa-pss, stripe, razorpay.',
                     $config['validator']
                 )
             );

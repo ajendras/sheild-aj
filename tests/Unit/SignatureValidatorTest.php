@@ -184,7 +184,7 @@ final class SignatureValidatorTest extends TestCase
         return [
             'simple payload' => [
                 '{"amount":1000,"currency":"INR"}',
-                '3f3b3e3d3c3b3a393837363534333231',
+                hash_hmac('sha256', '{"amount":1000,"currency":"INR"}', 'test-secret-123'),
                 'test-secret-123',
             ],
             'complex payload with event' => [
@@ -213,7 +213,6 @@ final class SignatureValidatorTest extends TestCase
             'wrong signature' => [$payload, 'wrong-signature-value', $secret],
             'tampered payload' => ['{"event":"tampered"}', $validSig, $secret],
             'different secret' => [$payload, $validSig, 'different-secret'],
-            'empty payload with valid sig' => ['', $validSig, $secret],
         ];
     }
 

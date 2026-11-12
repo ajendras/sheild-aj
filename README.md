@@ -102,7 +102,7 @@ php -S localhost:8080 -t examples/plain-php
 Run the test suite:
 
 ```bash
-vendor/bin/phpunit --testsuite=unit,feature
+vendor/bin/phpunit --testsuite=unit --testsuite=feature
 ```
 
 The binary `bin/hookshield` is automatically installed and provides the `test` command.
@@ -320,7 +320,7 @@ examples/
 ## 🧪 Testing
 
 ```bash
-vendor/bin/phpunit --testsuite=unit,feature
+vendor/bin/phpunit --testsuite=unit --testsuite=feature
 ```
 
 The suite covers:

@@ -48,7 +48,7 @@
         "bin/hookshield"
     ],
     "scripts": {
-        "test": "vendor/bin/phpunit --testsuite=unit,feature",
+        "test": "vendor/bin/phpunit --testsuite=unit --testsuite=feature",
         "test:unit": "vendor/bin/phpunit --testsuite=unit",
         "test:feature": "vendor/bin/phpunit --testsuite=feature"
     },

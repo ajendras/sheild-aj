@@ -240,9 +240,10 @@ final class Shield
 
     private static function extractNonce(array $headers): string
     {
-        foreach (['x-nonce', 'x-request-id', 'x-webhook-id'] as $name) {
-            if (isset($headers[$name][0])) {
-                return (string) $headers[$name][0];
+        foreach ($headers as $key => $values) {
+            $lowerKey = strtolower($key);
+            if (in_array($lowerKey, ['x-nonce', 'x-request-id', 'x-webhook-id'], true) && isset($values[0])) {
+                return (string) $values[0];
             }
         }
         return '';
@@ -253,9 +254,10 @@ final class Shield
         if (isset($payload['event']) && is_string($payload['event'])) {
             return $payload['event'];
         }
-        foreach (['x-event', 'x-webhook-event'] as $name) {
-            if (isset($headers[$name][0])) {
-                return (string) $headers[$name][0];
+        foreach ($headers as $key => $values) {
+            $lowerKey = strtolower($key);
+            if (in_array($lowerKey, ['x-event', 'x-webhook-event'], true) && isset($values[0])) {
+                return (string) $values[0];
             }
         }
         return 'webhook.unknown';

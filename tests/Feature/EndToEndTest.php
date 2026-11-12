@@ -252,4 +252,43 @@ final class EndToEndTest extends TestCase
         $this->assertSame($payloadArr, $result->payload);
         $this->assertSame([], $result->violations);
     }
+
+    public function testHeadersAreCaseInsensitiveForExtraction(): void
+    {
+        $cache = new ArrayAdapter();
+        $secret = 'case-insensitive-test-secret';
+        $json = '{"event":"test.case.insensitive","id":999}';
+        $signature = hash_hmac('sha256', $json, $secret);
+        $nonce = 'nonce-' . bin2hex(random_bytes(8));
+        $timestamp = time();
+
+        $request = new ServerRequest(
+            'POST',
+            '/webhook',
+            [
+                'content-type' => 'application/json',
+                'x-signature' => $signature,
+                'X-TIMESTAMP' => (string) $timestamp,
+                'x-nonce' => $nonce,
+                'X-EVENT' => 'test.case.insensitive',
+            ],
+            $json,
+            '1.1',
+            ['REMOTE_ADDR' => '192.0.2.1']
+        );
+
+        $config = [
+            'secret' => $secret,
+            'validator' => 'hmac-sha256',
+            'cache' => $cache,
+            'tolerance' => 300,
+            'rate_limit' => ['max' => 5, 'window' => 60],
+            'rules' => [],
+        ];
+
+        $result = Shield::protect($request, $config);
+
+        $this->assertTrue($result->isSuccessful(), 'Should accept with mixed-case headers');
+        $this->assertSame('test.case.insensitive', $result->event);
+    }
 }
